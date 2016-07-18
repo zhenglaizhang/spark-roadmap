@@ -135,6 +135,44 @@ result count
 result.collect.mkString(","))
 ```
 
+## Pair RDD
+Pair RDDs are allowed to use all thransformations available to standard RDDs
+```scala
+val readme = sc.textFile("README.md")
+readme map (l => (l.split(" ")(0), l)) filter ( _._1 != "") collect
+
+val rdd = sc.parallelize(List(1, 2, 3, 2, 4, 5)) map (x => x -> x*x)
+rdd reduceByKey (_ + _) collect
+rdd.groupByKey collect
+
+rdd.mapValues(_+2) collect
+// same as 
+rdd map { case (x,y) => x -> (y+2) }
+
+rdd.flatMapValues(x => x to 5) collect
+rdd.keys()
+rdd.values()
+rdd.sortBykey()
+```
+
+#### Aggregation
+```scala
+val rdd = sc.parallelize(Vector(1, 2, 3, 3, 4))
+val mrdd = rdd map (x => x->x*x)
+mrdd reduceByKey(_+_) collect	// vs following statement
+mrdd reduceByKeyLocally(_+_)
+
+mrdd.mapValues(_->1).reduceByKey((x, y) => (x._1+y._1, x._2+y._2)) mapValues (x => x._1 / x._2) collect
+
+# word count
+sc.textFile("README.md") flatMap (_.split(" ")) map (_ -> 1) reduceByKey { (x, y) => x + y } collect	
+sc.textFile("README.md") flatMap (_.split(" ")) countByValue
+```
+
+### partition
+
+### Grouping
+
 ### Lazy evaluation
 
 
