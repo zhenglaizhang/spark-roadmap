@@ -167,11 +167,53 @@ mrdd.mapValues(_->1).reduceByKey((x, y) => (x._1+y._1, x._2+y._2)) mapValues (x 
 # word count
 sc.textFile("README.md") flatMap (_.split(" ")) map (_ -> 1) reduceByKey { (x, y) => x + y } collect	
 sc.textFile("README.md") flatMap (_.split(" ")) countByValue
+
+# average per key
+mrdd combineByKey(v => (v, 1), (acc: (Int, Int), v) => (acc._1 + v, acc._2 + 1), (acc1: (Int, Int), acc2: (Int, Int)) => (acc1._1 + acc2._1, acc1._2 + acc2._2)) collectAsMap
 ```
+
+
 
 ### partition
 
+* hash partition
+* range partition
+* `partitionBy(new HashPartitioner(100)).persist`
+* 
+
+```scala
+sc.parallelize(Seq(("a", 1), ("b", 2), ("c", 3), ("a", 3))).reduceByKey(_+_) collect     // default parallelism
+sc.parallelize(Seq(("a", 1), ("b", 2), ("c", 3), ("a", 3))).reduceByKey(_+_, 8) collect  // custom parallelism
+
+sc.parallelize(Seq(("a", 1), ("b", 2), ("c", 3), ("a", 3))).partitions
+sc.parallelize(Seq(("a", 1), ("b", 2), ("c", 3), ("a", 3))).partitions.size
+sc.parallelize(Seq(("a", 1), ("b", 2), ("c", 3), ("a", 3))).coalesce(2).partitions.size / coalesce -> optimized partitions if the target size is less than current partition size
+
+
+
+val rdd = sc.parallelize(Seq('a'->1, 'b'->2, 'c'->3, 'a' -> 4))
+rdd.partitionBy(new HashPartitioner(10)).partitioner
+rdd.partitionBy(new HashPartitioner(10)).persist // don't forget persist!!
+```
+
 ### Grouping
+
+```scala
+al left = sc.parallelize(Vector("a", "b", "c", "d")) map (_ -> 1)
+val right = sc.parallelize(Vector("a", "c", "d", "e", "a", "a")) map (_ -> 1)
+
+left.cogroup(right) collect	// RDD[(K, (Iterable[V], Iterable[W]))]
+
+left join right collect		// inner join
+left leftOuterJoin right collect
+left rightOuterJoin right collect
+
+val pair = sc.parallelize(Vector(10, 1, 12, 0, 20, 22, 100, 8)) map (_ -> 1)
+implicit val sortIntegerByString = new Ordering[Int] { override def compare(a: Int, b: Int) = a.toString.compare(b.toString) }
+pair.sortByKey()
+
+
+```
 
 ### Lazy evaluation
 
