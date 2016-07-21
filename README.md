@@ -176,8 +176,8 @@ mrdd combineByKey(v => (v, 1), (acc: (Int, Int), v) => (acc._1 + v, acc._2 + 1),
 
 ### partition
 
-* hash partition
-* range partition
+* `HashPartitioner`
+* `RangePartitioner`
 * `partitionBy(new HashPartitioner(100)).persist`
 * 
 
@@ -222,6 +222,22 @@ pair.sortByKey()
 * different storage levels, see `StorageLevel.scala`
 * LRU cache policy
 
+
+
+### Dealing with Data
+```scala
+val input = sc.textFile("README.md", 10)
+
+val input = sc.wholeTextFiles("file:///Users/Zhenglai/data/spark/salesFiles")
+val avg = input mapValues { v => val nums = v.split("\\W+").map(_.toDouble); nums.sum / nums.size.toDouble } collect
+avg.saveAsTextFile("file:///tmp")
+
+
+
+// use jackson jar dependency
+val result = input.flatMap(record => { try { Some(mapper.readValue(record, classOf[Person])) } catch { case _ => None }})
+
+```
 
 ## Tips
 

@@ -1,7 +1,6 @@
 
 
-// load spark--data.sc
-// val rdd = sc.parallelize(data)
+// :load /Users/Zhenglai/git/spark-roadmap/spark-data.sc
 
 object rdd_holder {
   /*
@@ -12,7 +11,17 @@ object rdd_holder {
 
 
   // 2 transformations + 1 action
+  println("Under 21")
+  // verbose
+  rdd.filter(p ⇒ p.age < 21).foreach(println(_))
+  // concise
+  rdd filter (_.page < 21) foreach println
+
   rdd filter (_.age > 21) map (_.last) saveAsObjectFile ("file:///tmp/user21.bin")
+
+  val counts = text.flatMap(_.split(" ")).map(_ → 1).reduceByKey(_ + _)
+  counts take 20 foreach println
+  counts saveAsTextFile ("file:///tmp/wc.test")
 }
 
 object df_holder {
@@ -33,17 +42,28 @@ object df_holder {
      when creating a DataFrame from an existing RDD of Java objects, Spark’s Catalyst optimizer cannot infer the schema and assumes that any objects in the DataFrame implement the scala.Product interface
 
      Scala case classes work out the box because they implement this interface.
+
+     This API introduced the concept of schema to describe the data, allowing Spark to manage the schema and only pass the data between nodes, which is much efficient than Java serialization.
    */
 
   val df = rdd toDF
+  val df2 = sqlContext.createDataFrame(data)
 
   // sql style
-  df.filter("age > 21") collect
+  df.filter("age > 21").collect.foreach(println)
   // Array[org.apache.spark.sql.Row] = Array([first3,last3,30])
 
   // expression builder style
-  df.filter(df.col("age").gt(21))
+  df.filter(df.col("age").gt(21)).collect.foreach(println)
   //
+
+  // def toDF(colNames: String*): DataFrame = ds.toDF(colNames : _*)
+  val linesDF = textFile.toDF("line")
+  val wordsDF = linesDF.explode("line","word")((line: String) => line.split(" "))
+
+  val wordCountDF = wordsDF.groupBy("word").count()
+
+  wordCountDF.show()
 }
 
 object ds_holder {

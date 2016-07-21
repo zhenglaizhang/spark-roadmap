@@ -1,19 +1,22 @@
 //run:  spark-shell --jars ~/.m2/repository/mysql/mysql-connector-java/5.1.39/mysql-connector-java-5.1.39.jar
 //      scala> :load /path/to/this/file
 import java.sql.{DriverManager, ResultSet}
-import org.apache.spark.rdd.JdbcRDD
+
+val data = new JdbcRDD(sc, createConnection, "SELECT * FROM Cf_User WHERE ? <= id AND id <= ?",
+  lowerBound = 1, upperBound = 120, numPartitions = 2, mapRow = extractValues)
+
 def createConnection() = {
-    Class.forName("com.mysql.jdbc.Driver").newInstance()
-      DriverManager.getConnection("jdbc:mysql://121.40.53.70:3306/jxcdb?user=starfish&password=~@$Starfish666&useUnicode=yes&characterEncoding=UTF-8")
+  val userName = sys.env.get("MYSQL.USERNAME").orElse("root").get
+  val password = sys.env.get("MYSQL.PASSWORD").orElse("password").get
+  Class.forName("com.mysql.jdbc.Driver").newInstance()
+  DriverManager.getConnection(s"jdbc:mysql://121.40.53" +
+    ".70:3306/jxcdb?user=${userName}&password=${password}&useUnicode=yes&characterEncoding=UTF-8")
 
 }
 
 def extractValues(r: ResultSet) = {
-    r.getInt(1) -> r.getString(2)
+  r.getInt(1) -> r.getString(2)
 
 }
 
-val data = new JdbcRDD(sc, createConnection, "SELECT * FROM Cf_User WHERE ? <= id AND id <= ?",
-    lowerBound = 1, upperBound = 120, numPartitions = 2, mapRow = extractValues)
-  
 println(data.collect.toList) 
