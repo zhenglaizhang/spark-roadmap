@@ -1,10 +1,7 @@
-val rdd = sc.parallelize(Seq(
-  Person("first1", "last1", 12),
-  Person("first2", "last2", 20),
-  Person("first3", "last3", 30)
-))
 
-case class Person(first: String, last: String, age: Int)
+
+// load spark--data.sc
+// val rdd = sc.parallelize(data)
 
 object rdd_holder {
   /*
